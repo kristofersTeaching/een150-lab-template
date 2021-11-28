@@ -396,7 +396,7 @@ def generate_launch_description():
         control_gui_node,
         query_gui_node,
         marker_gui_node,
-        opc_node,
+        # opc_node, # lauch the opc node from another launch file since the plc dies after a while
         aruco_node,
         aruco_locker
     ]

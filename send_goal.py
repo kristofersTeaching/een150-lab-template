@@ -6,9 +6,16 @@ def main(args=None):
     rclpy.init(args=args)
     node = rclpy.create_node('send_goal')
 
-    publisher = node.create_publisher(String, '/goal', 10)
+    publisher = node.create_publisher(String, '/set_state', 10)
+
     msg = String()
-    pos = {'positions' :['pos9', 'pos3']}
+    pos = {"replan": False}
+
+    msg.data = json.dumps(pos)
+    publisher.publish(msg)
+
+    # set a state here to force replan
+    pos = {"replan": True, "cyl_at_hcpos2": False}
 
     msg.data = json.dumps(pos)
     publisher.publish(msg)

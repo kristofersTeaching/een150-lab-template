@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from typing import ClassVar, List, Optional, Tuple
 import predicates.guards
@@ -5,6 +6,7 @@ from predicates.state import State
 from predicates.guards import Eq, Guard, guards
 from predicates.actions import Action, Assign
 from predicates.errors import NextException
+from predicates.guards import AlwaysTrue
 
 
 @dataclass(frozen=True, order=True)
@@ -38,7 +40,12 @@ class Transition(object):
             s = a.next(s)
         return s
 
-
+    @classmethod
+    def default(cls) -> Transition:
+        return Transition("default",
+            AlwaysTrue(),
+            ()
+        )
         
 @dataclass(frozen=True, order=True)
 class Operation(object):
@@ -46,6 +53,7 @@ class Operation(object):
     precondition: Transition
     postcondition: Transition
     effects: Tuple[Action, ...]
+    to_run: Transition
     """
     The operation represent a task that will take some time before completion, and is a good
     abstraction that can be used for both planning and control. The operation has a state variable
@@ -68,13 +76,23 @@ class Operation(object):
 
     The effect are used to emulate changes of measured variables when planning
 
+    to_run is a Transition that only executes when running. It is skipped in the planner
+    so that it can find a plan anyway, but still wait for something like an event when running
+    in order to be executed. So, when modelling, think about how to separate the complete precondition 
+    into the precondition that applies only to the planner and the precondition that applies to the runner.
+
     """
     
     
     def eval(self, state: State) -> bool:
-        """Check if the operation can start. Should be used both when planning and running"""
+        """Check if the operation can start. Should be used both when planning"""
         init = not state.contains(self.name) or Eq(self.name, "i").eval(state)
         return init and self.precondition.eval(state)
+
+    def eval_run(self, state: State) -> bool:
+        """Check if the operation can start. Should be used both when running"""
+        init = not state.contains(self.name) or Eq(self.name, "i").eval(state)
+        return init and self.precondition.eval(state) and self.to_run.eval(state)
 
     def start(self, state: State) -> State:
         """Start the operation when running"""
@@ -102,4 +120,6 @@ class Operation(object):
         for a in self.effects:
             s = a.next(s)
         return s
+
+        
 

@@ -17,120 +17,123 @@ class Model(object):
         ops = {o: "i" for o in self.operations}
         self.initial_state = self.initial_state.next(**ops)
 
-
 g = predicates.guards.from_str
 a = predicates.actions.from_str
 
-positions = {f"pos{i}": 'empty' for i in range(1,10)}
-positions.update(input = 'empty', output = 'empty')
-
+# variable domains
+robot_poses = ['hcpos1', 'hcpos2', 'above_table']
+cylinder_poses = ['hcpos1', 'hcpos2']
+tcp_frames = ['suction_cup_1', 'suction_cup_2']
 
 def the_model() -> Model:
-
 
     initial_state = State(
         # control variables
         robot_run = False,   # trigger action when true. Change to false and then to true to trigger again
-        robot_command = 'move_j',   # move_j, move_l, 
-        robot_velocity = 1.0,
-        robot_acceleration = 1.0,
-        robot_goal_frame = 'pos1',   # where to go with the tool tcp
-        robot_tcp_frame = 'svt_tcp', # the tool tcp to use
-        
-        marker_run = False,
-        marker_parent = 'pos1',
-        marker_name = 'cube1',
+        robot_command = 'move_j',   # move_j, move_l, pick, place
+        robot_velocity = 0.5,
+        robot_acceleration = 0.3,
+        robot_goal_frame = 'unknown',   # where to go with the tool tcp
+        robot_tcp_frame = 'suction_cup_1', # the tool tcp to use
 
-        bool_to_plc1 = False,
-        bool_to_plc2 = False,
-        bool_to_plc3 = False,
-        bool_to_plc4 = False,
-        bool_to_plc5 = False,
-        int_to_plc1 = 0,
-        int_to_plc2 = 0,
-        int_to_plc3 = 0,
-        int_to_plc4 = 0,
-        int_to_plc5 = 0,
+        bool_to_plc_1 = False,
+        bool_to_plc_2 = False,
+        bool_to_plc_3 = False,
+        bool_to_plc_4 = False,
+        bool_to_plc_5 = False,
+        int_to_plc_1 = 0,
+        int_to_plc_2 = 0,
+        int_to_plc_3 = 0,
+        int_to_plc_4 = 0,
+        int_to_plc_5 = 0,
+
+        replan = False,
 
         # measured variables
         robot_state = "initial",  # "exec", "done", "failed" 
-        robot_act_pos = 'unknown',
-        marker_done = False,
-        new_marker_name = 'cube_name',
+        robot_pose = 'unknown',
+
+        replanned = False,
+
+        bool_from_plc_1 = False,
+        bool_from_plc_2 = False,
+        bool_from_plc_3 = False,
+        bool_from_plc_4 = False,
+        bool_from_plc_5 = False,
+        int_from_plc_1 = 0,
+        int_from_plc_2 = 0,
+        int_from_plc_3 = 0,
+        int_from_plc_4 = 0,
+        int_from_plc_5 = 0,
 
         #estimated
-        gripper = 'empty',
-        robot_pos = 'unknown',
-        **{f"in_{p}": v for p, v in positions.items()},
-
+        suction_cup_1_occ = False, # If a suction cup is occupied or not
+        suction_cup_2_occ = False,
+        cyl_at_hcpos1 = True,
+        cyl_at_hcpos2 = False,
     )
-
 
     ops = {}
 
-    ops[f"add_cube"] = Operation(
-        name = f"add_cube",
-        precondition = Transition("pre", 
-            g(f"in_input == empty"), 
-            a(f"marker_run, marker_parent <- input, marker_name <- generate")),
-        postcondition = Transition("post", 
-            g(f"marker_done"), 
-            a(f"!marker_run, in_input <- new_marker_name")),
-        effects = (),
-    )
+    # for each pose, maybe you need to have a separate operaion
+    # or use the domain lists?
 
-    ops[f"remove_cube"] = Operation(
-        name = f"remove_cube",
-        precondition = Transition("pre", 
-            g(f"in_output != empty"), 
-            a(f"marker_run, marker_parent <- remove, marker_name <- in_output")),
-        postcondition = Transition("post", 
-            g(f"marker_done"), 
-            a(f"!marker_run, in_output <- empty")),
-        effects = (),
-    )
-
-    for p in positions.keys():
-        ops[f"to_{p}"] = Operation(
-            name = f"to_{p}",
+    # move to above_table
+    for p in robot_poses:
+        ops[f"move_to_{p}"] = Operation(
+            name = f"move_to_{p}",
             precondition = Transition("pre", 
-                g(f"!robot_run && robot_pos != {p} && ((in_{p} == empty && gripper != empty) || (in_{p} != empty && gripper == empty)) "), 
-                a(f"robot_run, robot_goal_frame = {p}")),
+                g(f"!robot_run && robot_pose != {p}"), 
+                a(f"robot_command = move_j, robot_run, robot_goal_frame = {p}")),
             postcondition = Transition("post", 
                 g(f"robot_state == done"), 
-                a(f"!robot_run, robot_pos <- {p}")),
+                a(f"!robot_run, robot_pose <- {p}")),
             effects = (),
+            to_run = Transition.default()
         )
 
-        ops[f"pick_at_{p}"] = Operation(
-            name = f"pick_at_{p}",
+    # move to poses
+    for p in cylinder_poses:
+        ops[f"move_to_{p}"] = Operation(
+            name = f"move_to_{p}",
             precondition = Transition("pre", 
-                g(f"(robot_pos == {p}) && (in_{p} != empty) && (gripper == empty)"), 
-                a(f"marker_run, marker_parent <- svt_tcp, marker_name <- in_{p}")),
+                g(f"!robot_run && robot_pose == above_table"), 
+                a(f"robot_command = move_j, robot_run, robot_goal_frame = {p}")),
             postcondition = Transition("post", 
-                g(f"marker_done"), 
-                a(f"!marker_run, gripper <- in_{p}, in_{p} <- empty")),
+                g(f"robot_state == done"), 
+                a(f"!robot_run, robot_pose <- {p}")),
             effects = (),
+            to_run = Transition.default()
         )
 
-        ops[f"place_at_{p}"] = Operation(
-            name = f"place_at_{p}",
-            precondition = Transition("pre", 
-                g(f"(robot_pos == {p}) && (in_{p} == empty) && (gripper != empty)"), 
-                a(f"marker_run, marker_parent <- {p}, marker_name <- gripper")),
-            postcondition = Transition("post", 
-                g(f"marker_done"), 
-                a(f"!marker_run, in_{p} <- gripper,  gripper <- empty")),
-            effects = (),
-        )
+    for p in cylinder_poses:
+        for cup in ["suction_cup_1", "suction_cup_2"]:
+            ops[f"pick_at_{p}_with_{cup}"] = Operation(
+                name = f"pick_at_{p}_with_{cup}",
+                precondition = Transition("pre", 
+                    g(f"(robot_pose == {p}) && !{cup}_occ && cyl_at_{p}"), 
+                    a(f"robot_command = pick, robot_tcp_frame = {cup}, robot_run")),
+                postcondition = Transition("post", 
+                    g(f"robot_state == done"), 
+                    a(f"!robot_run, {cup}_occ, !cyl_at_{p}")),
+                effects = (),
+                to_run = Transition.default()
+            )
 
+            ops[f"place_at_{p}_with_{cup}"] = Operation(
+                name = f"place_at_{p}_with_{cup}",
+                precondition = Transition("pre", 
+                    g(f"(robot_pose == {p}) && {cup}_occ && !cyl_at_{p}"), 
+                    a(f"robot_command = place, robot_tcp_frame = {cup}, robot_run")),
+                postcondition = Transition("post", 
+                    g(f"robot_state == done"), 
+                    a(f"!robot_run, {cup}_occ, cyl_at_{p}")),
+                effects = (),
+                to_run = Transition.default()
+            )
 
     # To be used to run "free" transitions. Not implemented in the runner though, so you have to do that
     transitions: List[Transition] = []
-
-
-    
-
 
     return Model(
         initial_state,
@@ -138,29 +141,9 @@ def the_model() -> Model:
         transitions
     )
 
-
-def from_goal_to_goal(goal: str) -> Guard:
+def from_goal_to_goal(state: State) -> Guard:
     """
     Create a goal predicate 
     """
 
-    dict = json.loads(goal)
-    try:
-        xs: set[str] = set(dict['positions'])
-        cubes_at: list[Guard] = []
-        cubes_at.append(g(f"gripper == empty"))
-        for p in positions.keys():
-            if p in xs:
-                cubes_at.append(g(f"in_{p} != empty"))
-            else:
-                cubes_at.append(g(f"in_{p} == empty"))
-
-        return And(*cubes_at)
-
-    except KeyError:
-        return AlwaysTrue()
-
-
-
-
-
+    return g("cyl_at_hcpos2")
