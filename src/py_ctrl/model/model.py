@@ -6,6 +6,7 @@ from predicates.state import State
 import predicates.guards
 import predicates.actions
 from predicates.guards import AlwaysTrue, Guard, And
+from py_ctrl.predicates.guards import AlwaysFalse
 
 @dataclass
 class Model(object):
@@ -47,7 +48,10 @@ def the_model() -> Model:
         int_to_plc_4 = 0,
         int_to_plc_5 = 0,
 
+        goal_as_string = "cyl_at_hcpos2"
         replan = False,
+
+        aruco_run = False,
 
         # measured variables
         robot_state = "initial",  # "exec", "done", "failed" 
@@ -66,11 +70,15 @@ def the_model() -> Model:
         int_from_plc_4 = 0,
         int_from_plc_5 = 0,
 
+        aruco_done = False,
+
         #estimated
         suction_cup_1_occ = False, # If a suction cup is occupied or not
         suction_cup_2_occ = False,
         cyl_at_hcpos1 = True,
         cyl_at_hcpos2 = False,
+
+        arucos_locked = False,
     )
 
     ops = {}
@@ -131,6 +139,14 @@ def the_model() -> Model:
                 effects = (),
                 to_run = Transition.default()
             )
+    
+    ops[f"lock_arucos"]= Operation(
+        name=f"lock_arucos",
+        precondition=Transition("pre", g(f"!arucos_locked && robot_pos == camera"), a("lock_run")),
+        postcondition=Transition("post", g(f"lock_done"), a("!lock_run, arucos_locked")),
+        effects= (),
+        to_run = Transition.default()
+    )
 
     # To be used to run "free" transitions. Not implemented in the runner though, so you have to do that
     transitions: List[Transition] = []
@@ -145,5 +161,8 @@ def from_goal_to_goal(state: State) -> Guard:
     """
     Create a goal predicate 
     """
-
-    return g("cyl_at_hcpos2")
+    goal: str = state.get("goal_as_string")
+    if goal != "":
+        return g(goal)
+    
+    return AlwaysFalse()

@@ -15,7 +15,11 @@ def main(args=None):
     publisher.publish(msg)
 
     # set a state here to force replan
-    pos = {"replan": True, "cyl_at_hcpos2": False}
+    pos = {
+        "replan": True, 
+        "cyl_at_hcpos2": False, 
+        "goal_as_string": "cyl_at_hcpos2"
+    }
 
     msg.data = json.dumps(pos)
     publisher.publish(msg)
