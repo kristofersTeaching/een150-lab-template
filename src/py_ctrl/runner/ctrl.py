@@ -10,6 +10,7 @@ from rclpy.action import ActionClient
 from rclpy.action.client import ClientGoalHandle
 from rclpy.publisher import Publisher
 from ur_tools_msgs.action import URScriptControl
+from std_srvs.srv import Trigger
 # from viz_tools_msgs.srv import ManipulateDynamicMarker
 import random
 
@@ -161,6 +162,32 @@ class Runner(Node):
         self.robot_action_goal_handle = None
 
 
+    def lock_marker_service(self):
+        run: bool = self.state.get('lock_run')
+        if run and not self.lock_done and not self.lock_waiting:
+            self.lock_waiting = True
+            print("waiting for service")
+            service = self.create_client(Trigger, "/lock_arucos")
+            service.wait_for_service()
+            print("Service ready")
+            msg = Trigger.Request()
+
+            resp = service.call_async(msg)
+            resp.add_done_callback(self.locked_done_callback)
+            
+        elif not run and self.lock_done:
+            self.lock_done = False
+
+        self.upd_state('lock_done', self.lock_done)
+    
+    def locked_done_callback(self, future):
+        print("WE LOCKED IT")
+        self.lock_waiting = False
+        result = future.result().success
+        if not result:
+            print(f"The locked service did not like the call. Check log in simulator window")
+        self.lock_done = result
+        self.upd_state('lock_done', self.lock_done)
 
 
     def send_to_opc(self):
@@ -221,6 +248,7 @@ class Runner(Node):
         # below, we are publishing the command variables to the simulation via ros
         self.send_ur_action_goal()
         # self.send_marker_service()
+        self.lock_marker_service()
         state_json = json.dumps(self.state.state)
         self.pub_state.publish(String(data = state_json))
         self.send_to_opc()
