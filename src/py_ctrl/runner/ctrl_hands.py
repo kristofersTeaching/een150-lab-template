@@ -11,7 +11,7 @@ from std_msgs.msg import String
 #  thumb_mcp,
 #  thumb_ip,
 #  thumb_tip,
-#  index_finger_mcp,
+#  index_finger_mcp, x, y, z
 #  index_finger_pip,
 #  index_finger_dip,
 #  index_finger_tip,
@@ -38,7 +38,7 @@ class HandsSubscriber(Node):
             self.listener_callback,
             10)
         self.subscription  # prevent unused variable warning
-        self.publisher_ = self.create_publisher(String, 'hands_done', 10)
+        self.publisher_ = self.create_publisher(String, 'hands_gesture', 10)
 
     def listener_callback(self, msg):
         try:

@@ -35,6 +35,8 @@ plan_status: str = "plan_status"
 class Runner(Node):
     # marker_done: bool = False
     cube_id = 1
+    lock_done = False
+    lock_run = False
     
     def __init__(self):
         super().__init__('the_runner')

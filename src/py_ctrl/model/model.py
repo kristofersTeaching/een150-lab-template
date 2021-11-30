@@ -6,7 +6,7 @@ from predicates.state import State
 import predicates.guards
 import predicates.actions
 from predicates.guards import AlwaysTrue, Guard, And
-from py_ctrl.predicates.guards import AlwaysFalse
+from predicates.guards import AlwaysFalse
 
 @dataclass
 class Model(object):
@@ -49,10 +49,12 @@ def the_model() -> Model:
         int_to_plc_4 = 0,
         int_to_plc_5 = 0,
 
-        goal_as_string = "cyl_at_hcpos2"
+        goal_as_string = "cyl_at_hcpos2",
         replan = False,
+        lock_run = False,
 
         aruco_run = False,
+        lock_done = False,
 
         # measured variables
         robot_state = "initial",  # "exec", "done", "failed" 
@@ -143,7 +145,7 @@ def the_model() -> Model:
     
     ops[f"lock_arucos"]= Operation(
         name=f"lock_arucos",
-        precondition=Transition("pre", g(f"!arucos_locked && robot_pos == camera"), a("lock_run")),
+        precondition=Transition("pre", g(f"!arucos_locked && robot_pose == camera"), a("lock_run")),
         postcondition=Transition("post", g(f"lock_done"), a("!lock_run, arucos_locked")),
         effects= (),
         to_run = Transition.default()
