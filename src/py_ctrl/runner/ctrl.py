@@ -68,6 +68,12 @@ class Runner(Node):
             callback = self.set_opc_callback,
             qos_profile = 10)
 
+        self.create_subscription(
+            msg_type = String,
+            topic = '/hands_gesture',
+            callback = self.gesture_callback,
+            qos_profile = 10)
+
         self.pub_opc: Publisher = self.create_publisher(
             msg_type=String,
             topic = '/opc_command',
@@ -90,6 +96,12 @@ class Runner(Node):
         except json.decoder.JSONDecodeError as e:
             print(f"message is bad: {msg.data}")
             print(e)
+
+    def gesture_callback(self, msg: String):
+        """
+        listen to gestures
+        """
+        self.upd_state('gesture', msg.data)
 
     def set_opc_callback(self, msg: String):
         """

@@ -36,6 +36,7 @@ def the_model() -> Model:
         robot_acceleration = 0.3,
         robot_goal_frame = 'unknown',   # where to go with the tool tcp
         robot_tcp_frame = 'suction_cup_1', # the tool tcp to use
+        gesture = 'unknown',
 
         bool_to_plc_1 = False,
         bool_to_plc_2 = False,
