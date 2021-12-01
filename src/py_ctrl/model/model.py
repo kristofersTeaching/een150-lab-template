@@ -22,8 +22,8 @@ g = predicates.guards.from_str
 a = predicates.actions.from_str
 
 # variable domains
-robot_poses = ['hcpos1', 'hcpos2', 'above_table']
-cylinder_poses = ['hcpos1', 'hcpos2']
+robot_poses = ['pose_1', 'pose_2', 'above_table']
+cylinder_poses = ['pose_1', 'pose_2']
 tcp_frames = ['suction_cup_1', 'suction_cup_2']
 
 def the_model() -> Model:
@@ -49,7 +49,7 @@ def the_model() -> Model:
         int_to_plc_4 = 0,
         int_to_plc_5 = 0,
 
-        goal_as_string = "cyl_at_hcpos2",
+        goal_as_string = "cyl_at_pose_2",
         replan = False,
         lock_run = False,
 
@@ -78,71 +78,149 @@ def the_model() -> Model:
         #estimated
         suction_cup_1_occ = False, # If a suction cup is occupied or not
         suction_cup_2_occ = False,
-        cyl_at_hcpos1 = True,
-        cyl_at_hcpos2 = False,
+        cyl_at_pose_1 = True,
+        cyl_at_pose_2 = False,
 
         arucos_locked = False,
     )
 
     ops = {}
 
-    # for each pose, maybe you need to have a separate operaion
-    # or use the domain lists?
+    # move to pose_1
+    ops[f"move_to_pose_1"] = Operation(
+        name = f"move_to_pose_1",
+        precondition = Transition("pre", 
+            g(f"!robot_run && robot_pose == above_table"), 
+            a(f"robot_command = move_j, robot_run, robot_goal_frame = pose_1")),
+        postcondition = Transition("post", 
+            g(f"robot_state == done"), 
+            a(f"!robot_run, robot_pose <- pose_1")),
+        effects = (),
+        to_run = Transition.default()
+    )
+
+    # move to pose_2
+    ops[f"move_to_pose_2"] = Operation(
+        name = f"move_to_pose_2",
+        precondition = Transition("pre", 
+            g(f"!robot_run && robot_pose == above_table"), 
+            a(f"robot_command = move_j, robot_run, robot_goal_frame = pose_2")),
+        postcondition = Transition("post", 
+            g(f"robot_state == done"), 
+            a(f"!robot_run, robot_pose <- pose_2")),
+        effects = (),
+        to_run = Transition.default()
+    )
 
     # move to above_table
-    for p in robot_poses:
-        ops[f"move_to_{p}"] = Operation(
-            name = f"move_to_{p}",
-            precondition = Transition("pre", 
-                g(f"!robot_run && robot_pose != {p}"), 
-                a(f"robot_command = move_j, robot_run, robot_goal_frame = {p}")),
-            postcondition = Transition("post", 
-                g(f"robot_state == done"), 
-                a(f"!robot_run, robot_pose <- {p}")),
-            effects = (),
-            to_run = Transition.default()
-        )
+    ops[f"move_to_above_table"] = Operation(
+        name = f"move_to_above_table",
+        precondition = Transition("pre", 
+            g(f"!robot_run && robot_pose != above_table"), 
+            a(f"robot_command = move_j, robot_run, robot_goal_frame = above_table")),
+        postcondition = Transition("post", 
+            g(f"robot_state == done"), 
+            a(f"!robot_run, robot_pose <- above_table")),
+        effects = (),
+        to_run = Transition.default()
+    )
 
-    # move to poses
-    for p in cylinder_poses:
-        ops[f"move_to_{p}"] = Operation(
-            name = f"move_to_{p}",
-            precondition = Transition("pre", 
-                g(f"!robot_run && robot_pose == above_table"), 
-                a(f"robot_command = move_j, robot_run, robot_goal_frame = {p}")),
-            postcondition = Transition("post", 
-                g(f"robot_state == done"), 
-                a(f"!robot_run, robot_pose <- {p}")),
-            effects = (),
-            to_run = Transition.default()
-        )
+    ops[f"pick_at_pose_1_with_suction_cup_1"] = Operation(
+        name = f"pick_at_pose_1_with_suction_cup_1",
+        precondition = Transition("pre", 
+            g(f"(robot_pose == pose_1) && !suction_cup_1_occ && cyl_at_pose_1"), 
+            a(f"robot_command = pick, robot_tcp_frame = suction_cup_1, robot_run")),
+        postcondition = Transition("post", 
+            g(f"robot_state == done"), 
+            a(f"!robot_run, suction_cup_1_occ, !cyl_at_pose_1")),
+        effects = (),
+        to_run = Transition.default()
+    )
 
-    for p in cylinder_poses:
-        for cup in ["suction_cup_1", "suction_cup_2"]:
-            ops[f"pick_at_{p}_with_{cup}"] = Operation(
-                name = f"pick_at_{p}_with_{cup}",
-                precondition = Transition("pre", 
-                    g(f"(robot_pose == {p}) && !{cup}_occ && cyl_at_{p}"), 
-                    a(f"robot_command = pick, robot_tcp_frame = {cup}, robot_run")),
-                postcondition = Transition("post", 
-                    g(f"robot_state == done"), 
-                    a(f"!robot_run, {cup}_occ, !cyl_at_{p}")),
-                effects = (),
-                to_run = Transition.default()
-            )
+    ops[f"pick_at_pose_1_with_suction_cup_2"] = Operation(
+        name = f"pick_at_pose_1_with_suction_cup_2",
+        precondition = Transition("pre", 
+            g(f"(robot_pose == pose_1) && !suction_cup_2_occ && cyl_at_pose_1"), 
+            a(f"robot_command = pick, robot_tcp_frame = suction_cup_2, robot_run")),
+        postcondition = Transition("post", 
+            g(f"robot_state == done"), 
+            a(f"!robot_run, suction_cup_2_occ, !cyl_at_pose_1")),
+        effects = (),
+        to_run = Transition.default()
+    )
 
-            ops[f"place_at_{p}_with_{cup}"] = Operation(
-                name = f"place_at_{p}_with_{cup}",
-                precondition = Transition("pre", 
-                    g(f"(robot_pose == {p}) && {cup}_occ && !cyl_at_{p}"), 
-                    a(f"robot_command = place, robot_tcp_frame = {cup}, robot_run")),
-                postcondition = Transition("post", 
-                    g(f"robot_state == done"), 
-                    a(f"!robot_run, {cup}_occ, cyl_at_{p}")),
-                effects = (),
-                to_run = Transition.default()
-            )
+    ops[f"pick_at_pose_2_with_suction_cup_1"] = Operation(
+        name = f"pick_at_pose_2_with_suction_cup_1",
+        precondition = Transition("pre", 
+            g(f"(robot_pose == pose_2) && !suction_cup_1_occ && cyl_at_pose_2"), 
+            a(f"robot_command = pick, robot_tcp_frame = suction_cup_1, robot_run")),
+        postcondition = Transition("post", 
+            g(f"robot_state == done"), 
+            a(f"!robot_run, suction_cup_1_occ, !cyl_at_pose_2")),
+        effects = (),
+        to_run = Transition.default()
+    )
+
+    ops[f"pick_at_pose_2_with_suction_cup_2"] = Operation(
+        name = f"pick_at_pose_2_with_suction_cup_2",
+        precondition = Transition("pre", 
+            g(f"(robot_pose == pose_2) && !suction_cup_2_occ && cyl_at_pose_2"), 
+            a(f"robot_command = pick, robot_tcp_frame = suction_cup_2, robot_run")),
+        postcondition = Transition("post", 
+            g(f"robot_state == done"), 
+            a(f"!robot_run, suction_cup_2_occ, !cyl_at_pose_2")),
+        effects = (),
+        to_run = Transition.default()
+    )
+
+    ops[f"place_at_pose_1_with_suction_cup_1"] = Operation(
+        name = f"place_at_pose_1_with_suction_cup_1",
+        precondition = Transition("pre", 
+            g(f"(robot_pose == pose_1) && suction_cup_1_occ && !cyl_at_pose_1"), 
+            a(f"robot_command = place, robot_tcp_frame = suction_cup_1, robot_run")),
+        postcondition = Transition("post", 
+            g(f"robot_state == done"), 
+            a(f"!robot_run, suction_cup_1_occ, cyl_at_pose_1")),
+        effects = (),
+        to_run = Transition.default()
+    )
+
+    ops[f"place_at_pose_1_with_suction_cup_2"] = Operation(
+        name = f"place_at_pose_1_with_suction_cup_2",
+        precondition = Transition("pre", 
+            g(f"(robot_pose == pose_1) && suction_cup_2_occ && !cyl_at_pose_1"), 
+            a(f"robot_command = place, robot_tcp_frame = suction_cup_2, robot_run")),
+        postcondition = Transition("post", 
+            g(f"robot_state == done"), 
+            a(f"!robot_run, suction_cup_2_occ, cyl_at_pose_1")),
+        effects = (),
+        to_run = Transition.default()
+    )
     
+    ops[f"place_at_pose_2_with_suction_cup_1"] = Operation(
+        name = f"place_at_pose_2_with_suction_cup_1",
+        precondition = Transition("pre", 
+            g(f"(robot_pose == pose_2) && suction_cup_1_occ && !cyl_at_pose_2"), 
+            a(f"robot_command = place, robot_tcp_frame = suction_cup_1, robot_run")),
+        postcondition = Transition("post", 
+            g(f"robot_state == done"), 
+            a(f"!robot_run, suction_cup_1_occ, cyl_at_pose_2")),
+        effects = (),
+        to_run = Transition.default()
+    )
+
+    ops[f"place_at_pose_2_with_suction_cup_2"] = Operation(
+        name = f"place_at_pose_2_with_suction_cup_2",
+        precondition = Transition("pre", 
+            g(f"(robot_pose == pose_2) && suction_cup_2_occ && !cyl_at_pose_2"), 
+            a(f"robot_command = place, robot_tcp_frame = suction_cup_2, robot_run")),
+        postcondition = Transition("post", 
+            g(f"robot_state == done"), 
+            a(f"!robot_run, suction_cup_2_occ, cyl_at_pose_2")),
+        effects = (),
+        to_run = Transition.default()
+    )
+
     ops[f"lock_arucos"]= Operation(
         name=f"lock_arucos",
         precondition=Transition("pre", g(f"!arucos_locked && robot_pose == camera"), a("lock_run")),
