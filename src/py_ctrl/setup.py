@@ -21,7 +21,6 @@ setup(
     entry_points={
         'console_scripts': [
             'go = runner.ctrl:run',
-            'random = runner.ctrl_random:run',
             'hands = runner.ctrl_hands:main',
         ],
     },

@@ -277,6 +277,10 @@ def tick_the_runner(state: State, model: Model, pre_start: bool) -> State:
 
     # Here you can execute the free transitions by checking if they are enabled and then do next on them
 
+    for t in model.transitions:
+        if t.eval(state):
+            state = t.next(state)
+
     the_plan: list[str] = state.get(runner_plan)    
     if not the_plan:
         return state.next(plan_status="No plan in state")
