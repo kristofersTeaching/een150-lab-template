@@ -21,10 +21,6 @@ class Model(object):
 g = predicates.guards.from_str
 a = predicates.actions.from_str
 
-# variable domains
-robot_poses = ['pose_1', 'pose_2', 'above_table']
-cylinder_poses = ['pose_1', 'pose_2']
-tcp_frames = ['suction_cup_1', 'suction_cup_2']
 
 def the_model() -> Model:
 
@@ -90,7 +86,7 @@ def the_model() -> Model:
     ops[f"move_to_pose_1"] = Operation(
         name = f"move_to_pose_1",
         precondition = Transition("pre", 
-            g(f"!robot_run && robot_pose == above_table"), 
+            g(f"!robot_run && robot_state == initial && robot_pose == above_table"), 
             a(f"robot_command = move_j, robot_run, robot_goal_frame = pose_1")),
         postcondition = Transition("post", 
             g(f"robot_state == done"), 
@@ -103,7 +99,7 @@ def the_model() -> Model:
     ops[f"move_to_pose_2"] = Operation(
         name = f"move_to_pose_2",
         precondition = Transition("pre", 
-            g(f"!robot_run && robot_pose == above_table"), 
+            g(f"!robot_run && robot_state == initial && robot_pose == above_table"), 
             a(f"robot_command = move_j, robot_run, robot_goal_frame = pose_2")),
         postcondition = Transition("post", 
             g(f"robot_state == done"), 
@@ -116,7 +112,7 @@ def the_model() -> Model:
     ops[f"move_to_above_table"] = Operation(
         name = f"move_to_above_table",
         precondition = Transition("pre", 
-            g(f"!robot_run && robot_pose != above_table"), 
+            g(f"!robot_run && robot_state == initial && robot_pose != above_table"), 
             a(f"robot_command = move_j, robot_run, robot_goal_frame = above_table")),
         postcondition = Transition("post", 
             g(f"robot_state == done"), 
@@ -140,7 +136,7 @@ def the_model() -> Model:
     ops[f"pick_at_pose_1_with_suction_cup_2"] = Operation(
         name = f"pick_at_pose_1_with_suction_cup_2",
         precondition = Transition("pre", 
-            g(f"(robot_pose == pose_1) && !suction_cup_2_occ && cyl_at_pose_1"), 
+            g(f"!robot_run && robot_state == initial && (robot_pose == pose_1) && !suction_cup_2_occ && cyl_at_pose_1"), 
             a(f"robot_command = pick, robot_tcp_frame = suction_cup_2, robot_run")),
         postcondition = Transition("post", 
             g(f"robot_state == done"), 
@@ -152,7 +148,7 @@ def the_model() -> Model:
     ops[f"pick_at_pose_2_with_suction_cup_1"] = Operation(
         name = f"pick_at_pose_2_with_suction_cup_1",
         precondition = Transition("pre", 
-            g(f"(robot_pose == pose_2) && !suction_cup_1_occ && cyl_at_pose_2"), 
+            g(f"!robot_run && robot_state == initial && (robot_pose == pose_2) && !suction_cup_1_occ && cyl_at_pose_2"), 
             a(f"robot_command = pick, robot_tcp_frame = suction_cup_1, robot_run")),
         postcondition = Transition("post", 
             g(f"robot_state == done"), 
@@ -164,7 +160,7 @@ def the_model() -> Model:
     ops[f"pick_at_pose_2_with_suction_cup_2"] = Operation(
         name = f"pick_at_pose_2_with_suction_cup_2",
         precondition = Transition("pre", 
-            g(f"(robot_pose == pose_2) && !suction_cup_2_occ && cyl_at_pose_2"), 
+            g(f"!robot_run && robot_state == initial && (robot_pose == pose_2) && !suction_cup_2_occ && cyl_at_pose_2"), 
             a(f"robot_command = pick, robot_tcp_frame = suction_cup_2, robot_run")),
         postcondition = Transition("post", 
             g(f"robot_state == done"), 
@@ -176,7 +172,7 @@ def the_model() -> Model:
     ops[f"place_at_pose_1_with_suction_cup_1"] = Operation(
         name = f"place_at_pose_1_with_suction_cup_1",
         precondition = Transition("pre", 
-            g(f"(robot_pose == pose_1) && suction_cup_1_occ && !cyl_at_pose_1"), 
+            g(f"!robot_run && robot_state == initial && (robot_pose == pose_1) && suction_cup_1_occ && !cyl_at_pose_1"), 
             a(f"robot_command = place, robot_tcp_frame = suction_cup_1, robot_run")),
         postcondition = Transition("post", 
             g(f"robot_state == done"), 
@@ -188,7 +184,7 @@ def the_model() -> Model:
     ops[f"place_at_pose_1_with_suction_cup_2"] = Operation(
         name = f"place_at_pose_1_with_suction_cup_2",
         precondition = Transition("pre", 
-            g(f"(robot_pose == pose_1) && suction_cup_2_occ && !cyl_at_pose_1"), 
+            g(f"!robot_run && robot_state == initial && (robot_pose == pose_1) && suction_cup_2_occ && !cyl_at_pose_1"), 
             a(f"robot_command = place, robot_tcp_frame = suction_cup_2, robot_run")),
         postcondition = Transition("post", 
             g(f"robot_state == done"), 
@@ -200,7 +196,7 @@ def the_model() -> Model:
     ops[f"place_at_pose_2_with_suction_cup_1"] = Operation(
         name = f"place_at_pose_2_with_suction_cup_1",
         precondition = Transition("pre", 
-            g(f"(robot_pose == pose_2) && suction_cup_1_occ && !cyl_at_pose_2"), 
+            g(f"!robot_run && robot_state == initial && (robot_pose == pose_2) && suction_cup_1_occ && !cyl_at_pose_2"), 
             a(f"robot_command = place, robot_tcp_frame = suction_cup_1, robot_run")),
         postcondition = Transition("post", 
             g(f"robot_state == done"), 
@@ -212,7 +208,7 @@ def the_model() -> Model:
     ops[f"place_at_pose_2_with_suction_cup_2"] = Operation(
         name = f"place_at_pose_2_with_suction_cup_2",
         precondition = Transition("pre", 
-            g(f"(robot_pose == pose_2) && suction_cup_2_occ && !cyl_at_pose_2"), 
+            g(f"!robot_run && robot_state == initial && (robot_pose == pose_2) && suction_cup_2_occ && !cyl_at_pose_2"), 
             a(f"robot_command = place, robot_tcp_frame = suction_cup_2, robot_run")),
         postcondition = Transition("post", 
             g(f"robot_state == done"), 
