@@ -112,11 +112,23 @@ class Runner(Node):
         try:
             j = msg.data.replace('\'', '\"')
             kvs: dict[str, Any] = json.loads(j)
-            
 
             fixed = {k.replace("ns=4;s=|var|CODESYS CONTROL FOR Raspberry Pi MC SL.Application.IO.", ""): v for k,v in kvs.items()}
+
+            kv = {
+                "bool_from_plc_1": fixed["bool_from_plc_1"],
+                "bool_from_plc_2": fixed["bool_from_plc_2"],
+                "bool_from_plc_3": fixed["bool_from_plc_3"],
+                "bool_from_plc_4": fixed["bool_from_plc_4"],
+                "bool_from_plc_5": fixed["bool_from_plc_5"],
+                "int_from_plc_1": fixed["int_from_plc_1"],
+                "int_from_plc_2": fixed["int_from_plc_2"],
+                "int_from_plc_3": fixed["int_from_plc_3"],
+                "int_from_plc_4": fixed["int_from_plc_4"],
+                "int_from_plc_5": fixed["int_from_plc_5"],
+            }
             # print(f"we got: {fixed}")
-            self.state = self.state.next(**fixed)
+            self.state = self.state.next(**kv)
         except TypeError as e:
             print(f"BAD: from opc: {e}")
         except json.decoder.JSONDecodeError as e:
