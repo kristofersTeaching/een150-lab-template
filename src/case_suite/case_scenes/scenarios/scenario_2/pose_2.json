@@ -1,7 +1,7 @@
 {
     "show": true,
     "active": false,
-    "child_frame": "hcpos2",
+    "child_frame": "pose_2",
     "parent_frame": "base",
     "transform": {
         "translation": {
