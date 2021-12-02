@@ -1,6 +1,7 @@
 import rclpy
 import json
 from std_msgs.msg import String
+import time
 
 def main(args=None):
     rclpy.init(args=args)
@@ -13,6 +14,8 @@ def main(args=None):
 
     msg.data = json.dumps(pos)
     publisher.publish(msg)
+
+    time.sleep(0.2)
 
     # set a state here to force replan
     pos = {
