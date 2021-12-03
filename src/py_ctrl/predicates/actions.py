@@ -42,10 +42,27 @@ class Assign(object):
         """
         try:
             state.get(self.variable)
-            x = self.value_or_variable
             if state.contains(self.value_or_variable):
-                x = state.get(self.value_or_variable)
-            return state.next(**{self.variable: x})
+                return state.next(**{self.variable: state.get(self.value_or_variable)})
+            return state.next(**{self.variable: self.value_or_variable})
+
+        except NotInStateException as e:
+            raise NextException(f"{e.message}")
+
+
+@dataclass(frozen=True, order=True)
+class AssignOnlyValue(object):
+    variable: str
+    value: Any
+    """
+    The Assign only value is used when you know it is a value and not a variable that you would 
+    like to assign to the variable. Used when the string is for example the same as a variable name
+    """
+
+    def next(self, state: State) -> State:
+        try:
+            state.get(self.variable)
+            return state.next(**{self.variable: self.value})
         except NotInStateException as e:
             raise NextException(f"{e.message}")
 
@@ -55,7 +72,7 @@ class Inc(object):
     variable: str
     inc: int
     """
-    The Inc acion will increment the value of the variable with inc 
+    The Inc action will increment the value of the variable with inc 
     """
 
     def next(self, state: State) -> State:
@@ -104,7 +121,7 @@ class Next(object):
     variable: str
     domain: Tuple
     """
-    The Next action will pick the next value from a list of values and assign it to the variable. 
+    The Next acion will pick the next value from a list of values and assign it to the variable. 
     If the last value is currently assigned, the first value in the list is assigned.
     """
 
@@ -145,11 +162,13 @@ import ast
 from parsec import sepEndBy1, string, regex, generate, many, separated
 
 whitespace = regex(r'\s+')
+anything = regex(r'[^,]*')
 ignore = many(whitespace)
 lexeme = lambda p: p << ignore  # skip all ignored characters.
 
 eq = lexeme(string('='))
 arrow = lexeme(string('<-'))
+arrow_value_sign = lexeme(string('<='))
 assign_signs = eq | arrow
 plus = lexeme(string('+='))
 minus = lexeme(string('-='))
@@ -187,6 +206,15 @@ def assign():
     except ValueError as e:
         pass
     res = Assign(key, val)
+    return res
+
+@generate
+def assign_value():
+    """matches v1 <= value"""
+    key = yield symbol
+    yield arrow_value_sign
+    val = yield anything
+    res = AssignOnlyValue(key, val)
     return res
 
 @generate
@@ -234,7 +262,7 @@ def next():
 
 
 def actions() -> List[Action]:
-    return sepEndBy1(next ^ inc ^ dec ^ assign ^ set_to_false ^ set_to_true, delimiter) # type: ignore
+    return sepEndBy1(next ^ inc ^ dec ^ assign ^ assign_value ^ set_to_false ^ set_to_true, delimiter) # type: ignore
 
 def from_str(str) -> Tuple[Action]:
     """This function will parse a str into a list of actions. There may be situation that is not handled though"""

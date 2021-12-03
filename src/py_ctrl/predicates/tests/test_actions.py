@@ -1,7 +1,7 @@
 import pytest
 from predicates.state import State
 from predicates.guards import Eq, Not, And, Or, from_str
-from predicates.actions import Assign, Inc, Dec, Next
+from predicates.actions import Assign, Inc, Dec, Next, AssignOnlyValue
 from predicates.errors import NextException
 
 
@@ -20,6 +20,28 @@ def test_action_assign():
 
     assert s1_next.get("v1") == "hej"
     assert s1_next.get("v3") == "open"
+    assert s2_next.get("v1") == "open"
+
+    a3 = Assign("foo", "v3")
+    with pytest.raises(NextException) as e:
+        a3.next(s1)
+
+def test_action_assign_only_value():
+    """
+    This test checks the assign only value action
+    """
+    s1 = State(v1 = False, v2 = True, v3 = "open")
+    a1 = AssignOnlyValue("v1", "hej") # updates v1 to "hej"
+    a2 = AssignOnlyValue("v1", "v3") # updates v1 to "v3"
+    a3 = AssignOnlyValue("v1", "v3 == 3") # updates v1 to "v3 == 3"
+
+    s1_next = a1.next(s1)
+    s2_next = a2.next(s1)
+    s3_next = a3.next(s1)
+
+    assert s1_next.get("v1") == "hej"
+    assert s2_next.get("v1") == "v3"
+    assert s3_next.get("v1") == "v3 == 3"
 
     a3 = Assign("foo", "v3")
     with pytest.raises(NextException) as e:

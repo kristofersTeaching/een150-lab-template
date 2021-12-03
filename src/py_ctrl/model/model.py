@@ -78,6 +78,7 @@ def the_model() -> Model:
         cyl_at_pose_2 = False,
 
         arucos_locked = False,
+        trigger_goal = True
     )
 
     ops = {}
@@ -226,7 +227,13 @@ def the_model() -> Model:
     )
 
     # To be used to run "free" transitions. Not implemented in the runner though, so you have to do that
-    transitions: List[Transition] = []
+    transitions: List[Transition] = [
+        Transition("reset_goal", g("trigger_goal"), a("!trigger_goal, !replan")),
+        Transition("create_goal", g("!replanned"), a("replan, goal_as_string <= cyl_at_pose_2 == True")),
+    ]
+
+    # Example of setting a goal
+
 
     return Model(
         initial_state,
