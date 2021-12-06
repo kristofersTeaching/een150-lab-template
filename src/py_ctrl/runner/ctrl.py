@@ -43,6 +43,7 @@ class Runner(Node):
         self.model: Model = the_model()
         self.state: State = self.model.initial_state
         self.prev_state = self.state
+        self.lock_waiting = False
         self.upd_state(runner_goal, None)
         self.upd_state(runner_plan, None)
         self.upd_state(step_in_plan, None)
