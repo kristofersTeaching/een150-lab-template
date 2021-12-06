@@ -226,13 +226,13 @@ def the_model() -> Model:
         to_run = Transition.default()
     )
 
-    # To be used to run "free" transitions. Not implemented in the runner though, so you have to do that
+    # To be used to run "free" transitions. 
+    # Example of setting a goal
     transitions: List[Transition] = [
-        Transition("reset_goal", g("trigger_goal"), a("!trigger_goal, !replan")),
-        Transition("create_goal", g("!replanned"), a("replan, goal_as_string <= cyl_at_pose_2 == True")),
+        Transition("reset_goal", g("trigger_goal"), a("!replan")),
+        Transition("create_goal", g("trigger_goal && !replanned"), a("!trigger_goal, replan, goal_as_string <= cyl_at_pose_2 == True")),
     ]
 
-    # Example of setting a goal
 
 
     return Model(
