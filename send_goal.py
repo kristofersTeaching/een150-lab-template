@@ -20,8 +20,8 @@ def main(args=None):
     # set a state here to force replan
     pos = {
         "replan": True, 
-        # "cyl_at_hcpos1": True, 
-        # "cyl_at_hcpos2": False, 
+        "cyl_at_pose_1": True, 
+        "cyl_at_pose_2": False, 
         "goal_as_string": "cyl_at_pose_2"  # write a guard as a string that the guard parser can read
     }
 
