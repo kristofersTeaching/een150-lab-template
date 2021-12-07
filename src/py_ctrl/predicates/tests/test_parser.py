@@ -3,7 +3,7 @@ from predicates.state import State
 from predicates import guards
 from predicates.guards import Eq, Not, And, Or, Beq
 from predicates import actions
-from predicates.actions import Assign, Inc, Dec, Next
+from predicates.actions import Assign, AssignOnlyValue, Inc, Dec, Next
 
 def test_parser():
     res = guards.from_str('a && (b == c)')
@@ -52,6 +52,17 @@ def test_parser_action_more():
     res = actions.from_str("d <- {x, y, z}, a -= 2, b += 3")
     a = (Next('d', ('x', 'y', 'z')), Dec('a', 2), Inc('b', 3))
 
+    assert str(res) == str(a)
+
+def test_parser_action_only_value():
+    res = actions.from_str("d <- {x, y, z}, a <= b == c, b <= 3, k <- True, u")
+    a = (Next('d', ('x', 'y', 'z')), 
+        AssignOnlyValue('a', 'b == c'), 
+        AssignOnlyValue('b', '3'),
+        Assign('k', True),
+        Assign('u', True),
+        )
+    print(res)
     assert str(res) == str(a)
 
 def test_parser_true_false_assign():

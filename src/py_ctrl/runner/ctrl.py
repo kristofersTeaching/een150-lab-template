@@ -249,9 +249,14 @@ class Runner(Node):
             goal = from_goal_to_goal(self.state)
             print(f"The goal: {goal}")
             new_p = plan(self.state, goal, self.model, 30)
-            self.upd_state(runner_plan, new_p)
-            print(f"The new goal: {goal}")
-            print(f"and computed this plan: {new_p}")
+            if new_p == None:
+                print(f"Could not find a plan to goal: {goal}")
+            elif len(new_p) == 0:
+                print(f"We are already in goal: {goal}")
+            else:
+                self.upd_state(runner_plan, new_p)
+                print(f"The new goal: {goal}")
+                print(f"and computed this plan: {new_p}")
         
         if not replan:
             self.upd_state("replanned", False)
@@ -296,7 +301,7 @@ def tick_the_runner(state: State, model: Model, pre_start: bool) -> State:
 
     the_plan: list[str] = state.get(runner_plan)    
     if not the_plan:
-        return state.next(plan_status="No plan in state")
+        return state.next(plan_status="No plan in state", runner_plan = None, step_in_plan = None)
     
     current_step_in_plan: int = state.get(step_in_plan)
     if not current_step_in_plan:

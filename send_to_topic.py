@@ -7,9 +7,11 @@ def main(args=None):
     rclpy.init(args=args)
     node = rclpy.create_node('send_goal')
 
-    publisher = node.create_publisher(String, '/opc_command', 10)
+    publisher = node.create_publisher(String, '/set_state', 10)
     msg = String()
-    pos = {"ns=4;s=|var|CODESYS CONTROL FOR Raspberry Pi MC SL.Application.IO.bool_to_plc_1" : True}
+    pos = {
+        "trigger_goal_pos2": True
+    }
 
     msg.data = json.dumps(pos)
     time.sleep(0.1)

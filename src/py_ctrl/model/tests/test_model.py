@@ -4,7 +4,6 @@ from predicates import guards, actions
 from model.operation import Transition, Operation
 from predicates.errors import NextException
 from model.model import Model, the_model
-from handlers_msgs.msg import CubeState
 
 def test_model_creation():
     m = the_model()
